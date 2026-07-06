@@ -956,11 +956,16 @@ ComputerCard::ComputerCard()
 	gpio_set_dir(NORMALISATION_PROBE, GPIO_OUT);
 	gpio_put(NORMALISATION_PROBE, false);
 	
-	// Initialise EEPROM (I2C)
+	// use UART pins for i2c
 	i2c_init(i2c0, 100 * 1000);
-	gpio_set_function(EEPROM_SDA, GPIO_FUNC_I2C);
-	gpio_set_function(EEPROM_SCL, GPIO_FUNC_I2C);
+	//gpio_set_function(EEPROM_SDA, GPIO_FUNC_I2C);
+	//gpio_set_function(EEPROM_SCL, GPIO_FUNC_I2C);
+	gpio_set_function(0, GPIO_FUNC_I2C);
+	gpio_set_function(1, GPIO_FUNC_I2C); 
+	gpio_pull_up(0);
+	gpio_pull_up(1);
 
+	/*
 	
 	// If not using UART pins for UART, instead use as debug lines
 #ifndef ENABLE_UART_DEBUGGING
@@ -971,6 +976,8 @@ ComputerCard::ComputerCard()
 	gpio_init(DEBUG_2);
 	gpio_set_dir(DEBUG_2, GPIO_OUT);
 #endif
+
+	*/
 
 	// Read hardware version
 	hw = ProbeHardwareVersion();

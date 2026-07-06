@@ -1440,6 +1440,9 @@ public:
     lua_register(L, "clock_internal_set_tempo", lua_clock_internal_set_tempo);
     lua_register(L, "clock_internal_start", lua_clock_internal_start);
     lua_register(L, "clock_internal_stop", lua_clock_internal_stop);
+
+    // i2c hack
+    lua_register(L, "i2c", lua_i2c);
     
     // Create _c table with l_bootstrap_c_tell (handles both hardware and crow protocol)
     lua_newtable(L);
@@ -2039,7 +2042,35 @@ public:
             }
         }
     }
-    
+
+  // simple i2c send function, temporary hack
+  static int lua_i2c(lua_State* L)
+  {
+    uint8_t addr = (uint8_t)luaL_checkinteger(L, 1);
+
+    luaL_checktype(L, 2, LUA_TTABLE);
+
+    size_t len = lua_rawlen(L, 2);
+    if (len == 0) {
+        return luaL_error(L, "empty data table");
+    }
+
+    uint8_t buf[len];
+
+    for (size_t i = 0; i < len; i++) {
+        lua_rawgeti(L, 2, i + 1);
+        buf[i] = (uint8_t)luaL_checkinteger(L, -1);
+        lua_pop(L, 1);
+    }
+
+    int rc = i2c_write_blocking(i2c0, addr, buf, len, false);
+
+    printf("i2c sent\n");
+
+    lua_pushinteger(L, rc);
+    return 1;
+  }
+
 
     
     // CASL bridge functions
