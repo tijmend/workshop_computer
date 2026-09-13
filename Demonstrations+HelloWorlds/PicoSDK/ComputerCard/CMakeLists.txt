@@ -71,3 +71,27 @@ add_example(usb_detect)
 add_example(usb_serial)
 target_link_libraries(usb_serial pico_multicore)
 pico_enable_stdio_usb(usb_serial 1)
+
+add_example(telexio)
+target_compile_definitions(telexio PRIVATE ENABLE_UART_DEBUGGING)
+pico_generate_pio_header(telexio ${CMAKE_CURRENT_LIST_DIR}/examples/telexio/i2c_multi.pio)
+target_compile_options(telexio PRIVATE
+    -O3
+    -Wdouble-promotion
+    -Wfloat-conversion
+    -Wall
+    -Wextra
+)
+target_sources(telexio PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/examples/telexio/i2c_multi.c
+)
+pico_add_extra_outputs(telexio)
+target_link_libraries(telexio
+    pico_stdlib
+    hardware_irq
+    hardware_pio
+    hardware_i2c
+	pico_multicore
+)
+pico_enable_stdio_usb(telexio 1)
+pico_enable_stdio_uart(telexio 0)
