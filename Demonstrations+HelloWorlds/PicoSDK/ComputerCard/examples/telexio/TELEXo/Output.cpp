@@ -4,17 +4,17 @@
  * MIT License
  */
  
-#include "Arduino.h"
+//#include "Arduino.h"
 #include "Output.h"
 
 /*
  * Initialize and Output and its LED 
  */
-Output::Output(int output, int led){
-  
-  // store the variables
-  _output = output; 
-  _led = led;
-
+Output::Output(TelexIO& telex, int output, int led)
+    : _telex(telex),
+      _output(output),
+      _led(led),
+      _hasLed(true)
+{
 }
 

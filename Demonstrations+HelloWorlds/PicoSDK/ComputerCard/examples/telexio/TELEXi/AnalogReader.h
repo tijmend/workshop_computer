@@ -4,14 +4,34 @@
  * MIT License
  */
  
+#pragma once
+
 #ifndef AnalogReader_h
 #define AnalogReader_h
 
-#include "Arduino.h"
-#include <ResponsiveAnalogRead.h>
+//#include "Arduino.h"
+//#include <ResponsiveAnalogRead.h>
+
 
 #define TOP 16383
 #define BOTTOM -16384
+
+
+// helper functions replaced from the arduino library
+static inline int constrainInt(int value, int minValue, int maxValue)
+{
+    if (value < minValue) return minValue;
+    if (value > maxValue) return maxValue;
+    return value;
+}
+
+static inline int mapInt(int value, int inMin, int inMax, int outMin, int outMax)
+{
+    return (value - inMin) * (outMax - outMin)
+         / (inMax - inMin) + outMin;
+}
+
+class TelexIO;
 
 /*
  * helper class created for the TELEXi to read and scale inputs
@@ -20,8 +40,8 @@ class AnalogReader
 {
   public:
 
-    AnalogReader(int address);
-    AnalogReader(int address, bool reverse);
+    AnalogReader(TelexIO& telex, int address);
+    AnalogReader(TelexIO& telex, int address, bool reverse);
     
     int Read();
     int GetLatest();
@@ -38,10 +58,11 @@ class AnalogReader
 
   private:
   
+    TelexIO& _telex;
     int _address;
-    bool _reverse = false;
+    const bool _reverse;
     
-    ResponsiveAnalogRead *_analog;
+    //ResponsiveAnalogRead *_analog; // NOT NEEDED ON COMPUTER
     
     int volatile _readValue;
     int volatile _latestValue;

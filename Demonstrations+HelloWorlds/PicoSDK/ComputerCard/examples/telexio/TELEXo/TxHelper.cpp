@@ -5,43 +5,30 @@
  */
  
 #include "TxHelper.h"
-#include "fastexp.h"
-#include "Arduino.h"
+//#include "fastexp.h"
+//#include "Arduino.h"
+#include <cmath>
 
 // i2c
-#include <i2c_t3.h>
+//#include <i2c_t3.h>
 
-TxResponse TxHelper::Parse(size_t len){
+TxResponse __not_in_flash_func(TxHelper::Parse)(const uint8_t* buffer, const uint8_t len){
 
   TxResponse response;
 
-  int buffer[4] = { 0, 0, 0, 0 };
-
-  // zero out the read buffer
-  int counterPal = 0;
-  memset(buffer, 0, sizeof(buffer));
-
-  // read the data
-  while (1 < Wire.available()) {
-    if (counterPal < 4) {
-      buffer[counterPal++] = Wire.read();
-    }
-  }
-  // get the last byte
-  buffer[counterPal] = Wire.read();
-
-  uint16_t temp = (uint16_t)((buffer[2] << 8) + (buffer[3]));
-  int16_t temp2 = (int16_t)temp;
-
   response.Command = buffer[0];
-  response.Output = buffer[1];
-  response.Value = (int)temp2;
-
-  return response;
   
+  response.Output  = len > 1 ? buffer[1] : 0;
+  
+  uint16_t temp = 0;
+  if (len > 2) temp |= static_cast<uint16_t>(buffer[2]) << 8;
+  if (len > 3) temp |= buffer[3];
+  response.Value = static_cast<int16_t>(temp);
+  
+  return response;
 }
 
-TxIO TxHelper::DecodeIO(int io) {
+TxIO __not_in_flash_func(TxHelper::DecodeIO)(int io) {
   
   TxIO decoded;
   
@@ -57,11 +44,18 @@ TxIO TxHelper::DecodeIO(int io) {
 /*
  * Takes vOct between 0 and 16383 and convert them to frequencies
  */
-float TxHelper::VOct2Frequency(int value){
-   return 16.351597831287414 * fastpow2((value / 1638.3) - 1.);
+/*
+float __not_in_flash_func(TxHelper::VOct2Frequency)(int value){
+   //return 16.351597831287414 * fastpow2((value / 1638.3) - 1.);
+}
+*/
+
+constexpr float INV_1638_3 = 1.0f / 1638.3f;
+float __not_in_flash_func(TxHelper::VOct2Frequency)(int value){
+   return 8.1757989f * exp2f(static_cast<float>(value) * INV_1638_3);
 }
 
-unsigned long TxHelper::ConvertMs(unsigned long ms, short format){
+unsigned long __not_in_flash_func(TxHelper::ConvertMs)(unsigned long ms, short format){
   
   switch(format){
     

@@ -3,21 +3,30 @@
  * (c) 2016 Brendon Cassidy
  * MIT License
  */
+#pragma once
  
 #ifndef TriggerOutput_h
 #define TriggerOutput_h
 
-#include "Arduino.h"
+//#include "Arduino.h"
 #include "Output.h"
+#include "telexio.h"
 
 #define MAXTIME 4294967295
+
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt))) // replace constrain
+#define max(a,b) ((a) > (b) ? (a) : (b)) // include the max keyword
+
+#include <stdlib.h>
+#include "pico/time.h"
+#define millis() to_ms_since_boot(get_absolute_time())
 
 class TriggerOutput : public Output
 {
   public:
   
-    TriggerOutput(int output);
-    TriggerOutput(int output, int led);
+    // TriggerOutput(int output);
+    TriggerOutput(TelexIO& telex, int output, int led);
     
     void Update(unsigned long currentTime);
     
@@ -80,6 +89,78 @@ class TriggerOutput : public Output
 
     bool _mutePulse = false;
 };
+
+__attribute__((always_inline))
+inline void __not_in_flash_func(TriggerOutput::SetState)(bool state){
+  _state = state;
+  //digitalWrite(_output, _state ? HIGH : LOW);
+  //digitalWrite(_led, _state ? HIGH : LOW); 
+  _telex.SetPulse(_output, _state);
+  _telex.SetLed(_led, _state);
+}
+
+__attribute__((always_inline))
+inline void __not_in_flash_func(TriggerOutput::Update)(unsigned long currentTime){
+
+   //
+   // _multiplication = number of dongises
+   // _multiply = bool ON or OFF
+   // _multiplyInterval
+   // unsigned long _nextNormal = 0;
+   // int _multiplyCount = 0;
+   //
+
+  // turn off the pulse
+  if (currentTime >= _toggle) {
+    if (_state == _polarity)
+      SetState(!_polarity);
+    _toggle = MAXTIME;
+  }
+
+  // evaluate pinging the metro event
+  if (_metro && currentTime >= _nextEvent){
+
+    if (_multiply){
+
+      if (_multiplyCount == 0){
+        if (_metroCount == 0 || (_metroCount > 0 && --_actualCount > 0)){
+          // set the next reference beat (avoids divisionn drift)
+          _nextNormal = _nextNormal + _metroInterval;
+          // copy over any new values
+          _multiplyInterval = _tempMultiplyInterval;
+          _multiplication = _tempMultiplication;
+          // reset multiplication counter
+          _multiplyCount = 0;
+        } else {
+          // we have beat for the expected count - disable the metro
+          _metro = false;
+        }
+      }
+      
+      if (++_multiplyCount < _multiplication) {
+        // set the next event to the multiply interval
+        _nextEvent = _nextEvent + _multiplyInterval;
+      } else {
+        // set the next event to the metro interval (normal) and reset count
+        _nextEvent = _nextNormal;
+        _multiplyCount = 0;
+      }
+      
+    } else {
+
+      // we are just doing basic metronomes
+      if (_metroCount == 0 || (_metroCount > 0 && --_actualCount > 0)){
+        _nextEvent = _nextNormal + _metroInterval;
+        _nextNormal = _nextEvent;
+      } else
+        _metro = false;
+      
+    }
+      
+    Pulse();
+  }
+  
+}
 
 #endif
 

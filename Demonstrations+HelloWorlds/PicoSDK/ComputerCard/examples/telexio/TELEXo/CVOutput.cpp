@@ -4,20 +4,19 @@
  * MIT License
  */
  
-#include "defines.h"
-#include "Arduino.h"
+//#include "defines.h"
+//#include "Arduino.h"
 #include "CVOutput.h"
-#include "TxHelper.h"
-#include "DAC7565.h"
-
-#include "ExpTable.h"
+//#include "TxHelper.h"
+//#include "DAC7565.h"
 
 /*
  * Constructor for Setting up the Output
  */
-CVOutput::CVOutput(int output, int led, DAC& dac) : Output(output, led){
-  // store the DAC reference
-  _dac = dac;
+//CVOutput::CVOutput(int output, int led, DAC& dac) : Output(output, led){
+CVOutput::CVOutput(TelexIO& telex, int output, int led) : Output(telex, output, led){
+// store the DAC reference
+  //_dac = dac;
   // initialize the Quantizers
   _quantizer = new Quantizer(0);
   _oscQuantizer = new Quantizer(0);
@@ -35,10 +34,11 @@ void CVOutput::ReferenceTriggers(TriggerOutput (*triggerOutputs[]), int count){
   _triggerOutputCount = count;
 }
 
+
 /*
  * Sets the Value without Slew
  */
-void CVOutput::SetValue(int value){
+void __not_in_flash_func(CVOutput::SetValue)(int value){
   // target is the delivered value plus the configured offset
   _tempTarget = Constrain(value + (_offset + _calibration)) << 15;
   if (_envelopeMode){
@@ -56,7 +56,7 @@ void CVOutput::SetValue(int value){
 /*
  * Sets the Target to Slew to
  */
-void CVOutput::TargetValue(int value){
+void __not_in_flash_func(CVOutput::TargetValue)(int value){
   // target is the delivered value plus the configured offset
   _tempTarget = Constrain(value + (_offset + _calibration)) << 15;
   if (_envelopeMode){
@@ -77,7 +77,7 @@ void CVOutput::TargetValue(int value){
 /*
  * Sets the Slew Time (using the protected _time variable)
  */
-void CVOutput::SetSlew(int value, short format){
+void __not_in_flash_func(CVOutput::SetSlew)(int value, short format){
   // create the slew value from the passed integer in several formats (0=ms; 1=sec; 2=min)
   _slewTime = TxHelper::ConvertMs(value, format);
   CalculateSlewValue();  
@@ -88,7 +88,7 @@ void CVOutput::SetSlew(int value, short format){
 /*
  * Store a New Offset Value
  */
-void CVOutput::SetOffset(int value){
+void __not_in_flash_func(CVOutput::SetOffset)(int value){
 
   // neutralize old offset and add new offset to target
   _tempTarget = Constrain(((_envelopeMode ? _envTarget : _target) >> 15) + (value - _offset)) << 15;
@@ -120,7 +120,7 @@ void CVOutput::SetOffset(int value){
  * Calibrates the output by making the current offset permanent
  * Returns the calibration value for storage
  */
-int CVOutput::Calibrate(){
+int __not_in_flash_func(CVOutput::Calibrate)(){
   _calibration = _offset + _calibration;
   _offset = 0;
   // Serial.printf("calibration: %d; Offset: %d\n", _calibration, _offset);
@@ -131,7 +131,7 @@ int CVOutput::Calibrate(){
 /*
  * Resets the calibration value to 0 and resets the output
  */
-void CVOutput::ResetCalibration(){
+void __not_in_flash_func(CVOutput::ResetCalibration)(){
   
   // neutralize old calibration (ug) and add new offset to target
   _tempTarget = Constrain(((_envelopeActive ? _envTarget : _target) >> 15) - _calibration) << 15;
@@ -162,7 +162,7 @@ void CVOutput::ResetCalibration(){
 /*
  * Sets the calibration to a particular value (used by the start-up procedure)
  */
-void CVOutput::SetCalibrationValue(int value){
+void __not_in_flash_func(CVOutput::SetCalibrationValue)(int value){
   SetOffset(value);
   Calibrate();
 }
@@ -170,7 +170,7 @@ void CVOutput::SetCalibrationValue(int value){
 /*
  * Sets the logarithmic translation mode
  */
-void CVOutput::SetLog(int value){
+void __not_in_flash_func(CVOutput::SetLog)(int value){
   _logRange = value - 1;
   _doLog = value > 0;
 }
@@ -178,7 +178,7 @@ void CVOutput::SetLog(int value){
 /*
  * Stop Slew Activity and Jump to Target
  */
-void CVOutput::Kill(){
+void __not_in_flash_func(CVOutput::Kill)(){
   // stop slewing
   _set = true;
 }
@@ -186,7 +186,7 @@ void CVOutput::Kill(){
 /*
  * Reset the CV Output
  */
-void CVOutput::Reset(){
+void __not_in_flash_func(CVOutput::Reset)(){
   SetOffset(0);
   SetValue(0);
   SetSlew(1,0);
@@ -215,14 +215,14 @@ void CVOutput::Reset(){
 /*
  * Sets Output Quantization Mode for the CV Outputs
  */
-void CVOutput::SetQuantizationScale(int scale){
+void __not_in_flash_func(CVOutput::SetQuantizationScale)(int scale){
     _quantizer->SetScale(scale);
 }
 
 /*
  * Quantizes and sets a value to the current scale
  */
-void CVOutput::SetQuantizedValue(int note){
+void __not_in_flash_func(CVOutput::SetQuantizedValue)(int note){
   int16_t neg = note < 0 ? -1 : 1;
   SetValue((neg * _quantizer->Quantize(abs(note)).Value) << 1);
 }
@@ -230,7 +230,7 @@ void CVOutput::SetQuantizedValue(int note){
 /*
  * Quantizes and targets a value (with slew) to the current scale
  */
-void CVOutput::TargetQuantizedValue(int note){
+void __not_in_flash_func(CVOutput::TargetQuantizedValue)(int note){
   int16_t neg = note < 0 ? -1 : 1;
   TargetValue((neg * _quantizer->Quantize(abs(note)).Value) << 1);
 }
@@ -239,7 +239,7 @@ void CVOutput::TargetQuantizedValue(int note){
  * Sets a CV Value by Note Number
  * (against the active Quantization Scale)
  */
-void CVOutput::SetNote(int note){
+void __not_in_flash_func(CVOutput::SetNote)(int note){
   int16_t neg = note < 0 ? -1 : 1;
     SetValue((neg * (int)_quantizer->GetValueForNote(abs(note))) << 1);
 }
@@ -248,7 +248,7 @@ void CVOutput::SetNote(int note){
  * Sets a CV Value by Note Number
  * (against the active Quantization Scale)
  */
-void CVOutput::TargetNote(int note){
+void __not_in_flash_func(CVOutput::TargetNote)(int note){
   int16_t neg = note < 0 ? -1 : 1;
   TargetValue((neg * (int)_quantizer->GetValueForNote(abs(note))) <<  1);
 }
@@ -256,7 +256,7 @@ void CVOutput::TargetNote(int note){
 /*
  * Sets the Format for the Slew Time Value
  */
-void CVOutput::SetTimeFormat(int format){
+void __not_in_flash_func(CVOutput::SetTimeFormat)(int format){
   // call the base class
   // Output::SetTimeFormat(format);
 }
@@ -264,7 +264,7 @@ void CVOutput::SetTimeFormat(int format){
 /*
  * Shared Function for Oscillator Setup
  */
-void CVOutput::SharedOscil(int value){
+void __not_in_flash_func(CVOutput::SharedOscil)(int value){
 
   // reset the phase if it isn't currently oscillation mode
   if (!_oscilMode)
@@ -275,10 +275,10 @@ void CVOutput::SharedOscil(int value){
 
   // setup oscillation conditions or turn them off
   if (_oscilMode) {
-     _dacCenter = DACCENTER - _oscilCenter;
+     //_dacCenter = DACCENTER - _oscilCenter;
   } else {
     _set = true;
-    _dacCenter = DACCENTER;
+    //_dacCenter = DACCENTER;
   }
     
 }
@@ -286,16 +286,16 @@ void CVOutput::SharedOscil(int value){
 /*
  * Set the centerpoint for oscillation
  */
-void CVOutput::SetCenter(int value){
+void __not_in_flash_func(CVOutput::SetCenter)(int value){
   _oscilCenter = value;
-  if (_oscilMode)
-     _dacCenter = DACCENTER - _oscilCenter;
+  //if (_oscilMode) 
+     //_dacCenter = DACCENTER - _oscilCenter;
 }
 
 /*
  * Sets the oscillation frequency in Hz
  */
-void CVOutput::SetFrequency(int freq){
+void __not_in_flash_func(CVOutput::SetFrequency)(int freq){
 
   // call shared oscil setup function
   SharedOscil(freq);
@@ -308,7 +308,7 @@ void CVOutput::SetFrequency(int freq){
 /*
  * Targets the oscillation frequency in Hz (for slew)
  */
-void CVOutput::TargetFrequency(int freq){
+void __not_in_flash_func(CVOutput::TargetFrequency)(int freq){
 
   // call shared oscil setup function
   SharedOscil(freq);
@@ -322,7 +322,7 @@ void CVOutput::TargetFrequency(int freq){
  * Sets the oscillation frequency using the TT integer value
  * using the current quantizer scale
  */
-void CVOutput::SetQuantizedVOct(int value){
+void __not_in_flash_func(CVOutput::SetQuantizedVOct)(int value){
 
   // call shared oscil setup function
   SharedOscil(value);
@@ -332,11 +332,23 @@ void CVOutput::SetQuantizedVOct(int value){
 
 }
 
+void __not_in_flash_func(CVOutput::SetQuantizedVOct_withoracle)(int value){
+
+  // call shared oscil setup function
+  SharedOscil(value);
+  
+  if (_oscilMode)
+    _oscillator->SetFloatFrequency(oracle.floatAnswer);
+    // note: oracle.floatAnswer = cvOutputs[oracle.output]->QuantizedVOct_oraclewrapper(oracle.value);
+
+}
+
+
 /*
  * Targets the oscillation frequencty using the TT integer value
  * using the current quantizer scale
  */
-void CVOutput::TargetQuantizedVOct(int value){
+void __not_in_flash_func(CVOutput::TargetQuantizedVOct)(int value){
 
   // call shared oscil setup function
   SharedOscil(value);
@@ -347,16 +359,35 @@ void CVOutput::TargetQuantizedVOct(int value){
 }
 
 /*
+ * Targets the oscillation frequencty using the TT integer value
+ * using the current quantizer scale
+ */
+void __not_in_flash_func(CVOutput::TargetQuantizedVOct_withoracle)(int value){
+
+  // call shared oscil setup function
+  SharedOscil(value);
+  
+  if (_oscilMode)
+    _oscillator->TargetFloatFrequency(oracle.floatAnswer);
+  // note: oracle.floatAnswer = cvOutputs[oracle.output]->QuantizedVOct_oraclewrapper(oracle.value);
+
+}
+
+float __not_in_flash_func(CVOutput::QuantizedVOct_oraclewrapper)(int value){
+    return _quantizer->Quantize(value).Frequency;
+}
+
+/*
  * Sets the slew amount for the frequency (portamento) in the supplied format
  */
-void CVOutput::SetFrequencySlew(int slew, short format){
+void __not_in_flash_func(CVOutput::SetFrequencySlew)(int slew, short format){
   _oscillator->SetPortamentoMs(TxHelper::ConvertMs(slew, format));
 }
 
 /*
  * Sets the oscillation frequency using the TT integer value
  */
-void CVOutput::SetVOct(int value){
+void __not_in_flash_func(CVOutput::SetVOct)(int value){
 
   // call shared oscil setup function
   SharedOscil(value);
@@ -367,9 +398,23 @@ void CVOutput::SetVOct(int value){
 }
 
 /*
+ * Sets the oscillation frequency using the TT integer value
+ */
+void __not_in_flash_func(CVOutput::SetVOct_withoracle)(int value){
+
+  // call shared oscil setup function
+  SharedOscil(value);
+  
+  if (_oscilMode)
+    _oscillator->SetFloatFrequency(oracle.floatAnswer);
+
+}
+
+
+/*
  * Targets the oscillation frequency using the TT integer value
  */
-void CVOutput::TargetVOct(int value){
+void __not_in_flash_func(CVOutput::TargetVOct)(int value){
 
   // call shared oscil setup function
   SharedOscil(value);
@@ -379,10 +424,22 @@ void CVOutput::TargetVOct(int value){
 }
 
 /*
+ * Targets the oscillation frequency using the TT integer value
+ */
+void __not_in_flash_func(CVOutput::TargetVOct_withoracle)(int value){
+
+  // call shared oscil setup function
+  SharedOscil(value);
+
+  if (_oscilMode)
+    _oscillator->TargetFloatFrequency(oracle.floatAnswer);
+}
+
+/*
  * Sets the oscillation frequency via note number 
  * (against the current quantized scale)
  */
-void CVOutput::SetOscNote(int note){
+void __not_in_flash_func(CVOutput::SetOscNote)(int note){
 
   // call shared oscil setup function
   SharedOscil(1);
@@ -394,7 +451,7 @@ void CVOutput::SetOscNote(int note){
  * Targets the oscillation frequency via note number 
  * (against the current quantized scale)
  */
-void CVOutput::TargetOscNote(int note){
+void __not_in_flash_func(CVOutput::TargetOscNote)(int note){
 
   // call shared oscil setup function
   SharedOscil(1);
@@ -405,7 +462,7 @@ void CVOutput::TargetOscNote(int note){
 /*
  * Sets the duration of a single cycle
  */
-void CVOutput::SetCycle(int value, short format){
+void __not_in_flash_func(CVOutput::SetCycle)(int value, short format){
 
   value = TxHelper::ConvertMs(value, format);
   
@@ -419,7 +476,7 @@ void CVOutput::SetCycle(int value, short format){
 /*
  * Targets the duration of a single cycle
  */
-void CVOutput::TargetCycle(int value, short format){
+void __not_in_flash_func(CVOutput::TargetCycle)(int value, short format){
 
    value = TxHelper::ConvertMs(value, format);
   
@@ -433,7 +490,7 @@ void CVOutput::TargetCycle(int value, short format){
 /*
  * Sets the pulse width of the square wave waveform
  */
-void CVOutput::SetWidth(int width){
+void __not_in_flash_func(CVOutput::SetWidth)(int width){
   _oscillator->SetWidth(width);
 }
 
@@ -443,14 +500,14 @@ void CVOutput::SetWidth(int width){
  * -1/+1 = Partial Rectification (lops off values on the other side of zero)
  * -2/+2 = Full Rectification (does an ABS on the waveform and forces polarity)
  */
-void CVOutput::SetRectify(int mode){
+void __not_in_flash_func(CVOutput::SetRectify)(int mode){
   _oscillator->SetRectify(mode);
 }
 
 /*
  * Set the oscillator frequency in Millihertz (1 Hz = .001 mHz)
  */
-void CVOutput::SetLFO(int millihertz){
+void __not_in_flash_func(CVOutput::SetLFO)(int millihertz){
   
   // call shared oscil setup function
   SharedOscil(millihertz);
@@ -463,7 +520,7 @@ void CVOutput::SetLFO(int millihertz){
 /*
  * Target the oscillator frequency in Millihertz (1 Hz = .001 mHz)
  */
-void CVOutput::TargetLFO(int millihertz){
+void __not_in_flash_func(CVOutput::TargetLFO)(int millihertz){
 
   // call shared oscil setup function
   SharedOscil(millihertz);
@@ -476,7 +533,7 @@ void CVOutput::TargetLFO(int millihertz){
 /*
  * Resets the phase of the oscillator
  */
-void CVOutput::Sync(){
+void __not_in_flash_func(CVOutput::Sync)(){
   if (_oscilMode)
     _oscillator->ResetPhase(0);
   else
@@ -486,7 +543,7 @@ void CVOutput::Sync(){
 /*
  * Set the oscillator phase offset
  */
-void CVOutput::SetPhaseOffset(int phase){
+void __not_in_flash_func(CVOutput::SetPhaseOffset)(int phase){
   _oscillator->SetPhaseOffset(phase);
 }
 
@@ -498,7 +555,7 @@ void CVOutput::SetPhaseOffset(int phase){
  * 3000 = Square
  * 4000 = Noise / Sample-and-Hold
  */
-void CVOutput::SetWaveform(int wave){
+void __not_in_flash_func(CVOutput::SetWaveform)(int wave){
   _oscillator->SetWaveform(wave);
 }
 
@@ -506,14 +563,14 @@ void CVOutput::SetWaveform(int wave){
  * Sets the quantization scale based on the included scales 
  * (see the Quantizer for the list)
  */
-void CVOutput::SetOscQuantizationScale(int scale){
+void __not_in_flash_func(CVOutput::SetOscQuantizationScale)(int scale){
   _oscQuantizer->SetScale(scale);
 }
 
 /*
  * Sets the attack rate for the envelope generator
  */
-void CVOutput::SetAttack(int att, short format){
+void __not_in_flash_func(CVOutput::SetAttack)(int att, short format){
   _attack = TxHelper::ConvertMs(max(att, 1), format);
   _attackSlew = CalculateRawSlew(_attack, _envTarget, _lOffset);
   if (_envelopeActive && !_decaying){
@@ -526,7 +583,7 @@ void CVOutput::SetAttack(int att, short format){
 /*
  * Sets the decay rate for the envelope generator
  */
-void CVOutput::SetDecay(int dec, short format){
+void __not_in_flash_func(CVOutput::SetDecay)(int dec, short format){
   _decay = TxHelper::ConvertMs(max(dec, 1), format);
   _decaySlew = CalculateRawSlew(_decay, _lOffset, _envTarget);
   if (!_envelopeActive && _decaying){
@@ -539,7 +596,7 @@ void CVOutput::SetDecay(int dec, short format){
 /*
  * Turns envelopes on (1) and off (0) and initializes them
  */
-void CVOutput::SetEnvelopeMode(int mode){
+void __not_in_flash_func(CVOutput::SetEnvelopeMode)(int mode){
 
   // thanks to @scanner_darkly for suggesting this bugfix
   // only want to set the targets if the envelope mode has changed
@@ -566,9 +623,11 @@ void CVOutput::SetEnvelopeMode(int mode){
 
 }
 
+// BELOW CONVERTED TO INT MATH AND INLINED IN HEADER
 /*
  * Recomputes the Envlope Values
  */
+/*
 void CVOutput::RecomputeEnvelopes(){
   
   // calculate the interim slew if the envelope is currently active
@@ -590,11 +649,13 @@ void CVOutput::RecomputeEnvelopes(){
   _attackSlew = CalculateRawSlew(_attack, _envTarget, _lOffset);
   _decaySlew = CalculateRawSlew(_decay, _lOffset, _envTarget);
 }
+*/
 
 /*
  * Triggers or Retriggers the current envelope
  */
-void CVOutput::TriggerEnvelope(){
+/* // INLINED
+void __not_in_flash_func(CVOutput::TriggerEnvelope)(){
 
   if (_envelopeMode) {
 
@@ -620,12 +681,13 @@ void CVOutput::TriggerEnvelope(){
   }
   
 }
+*/
 
 /*
  * Sets the envelope state to trigger attack (1) or decay (0)
  * Attack triggers the envelope; decay allows the decay (but does not retrigger)
  */
-void CVOutput::SetENV(int value){
+void __not_in_flash_func(CVOutput::SetENV)(int value){
   bool newState = value > 0;
   if (newState) TriggerEnvelope();
   _envelopeState = newState;
@@ -634,7 +696,7 @@ void CVOutput::SetENV(int value){
 /*
  * Set the number of loops for the envelope (0 = inf)
  */
-void CVOutput::SetLoop(int loopEnv){
+void __not_in_flash_func(CVOutput::SetLoop)(int loopEnv){
   _loopTimes = max(loopEnv, 0);
   _infLoop = _loopTimes == 0;
 }
@@ -642,7 +704,7 @@ void CVOutput::SetLoop(int loopEnv){
 /*
  * Set the trigger for End of Rise (EOR)
  */
-void CVOutput::SetEOR(int trNumber){
+void __not_in_flash_func(CVOutput::SetEOR)(int trNumber){
   if (_triggerOutputCount > 0 && trNumber >= 0 && trNumber < _triggerOutputCount){
     _triggerForEOR = trNumber;
     _triggerEOR = true;
@@ -654,7 +716,7 @@ void CVOutput::SetEOR(int trNumber){
 /*
  * Set the trigger for End of Cycle (EOC)
  */
-void CVOutput::SetEOC(int trNumber){
+void __not_in_flash_func(CVOutput::SetEOC)(int trNumber){
   if (_triggerOutputCount > 0 && trNumber >= 0 && trNumber < _triggerOutputCount){
     _triggerForEOC = trNumber;
     _triggerEOC = true;
@@ -666,7 +728,9 @@ void CVOutput::SetEOC(int trNumber){
 /*
  * The Update Function to Fulfil the Virtual Requirement
  * Keep it Lean - You don't have Much CPU
- */
+ *
+ * COMPUTERCARD - move to header and inline
+ * 
 void FASTRUN CVOutput::Update() {
 
   if (_set || _slew.Steps == 1){
@@ -698,7 +762,9 @@ void FASTRUN CVOutput::Update() {
 
         // pulse the EOR trigger (if set)
         if (_envelopeMode && _triggerEOR)
-          _triggerOutputs[_triggerForEOR]->Pulse();
+        {  //LATER
+         // _triggerOutputs[_triggerForEOR]->Pulse(); 
+        }
         
       } else if (_envelopeState) {
         _updateLED = false;
@@ -708,7 +774,9 @@ void FASTRUN CVOutput::Update() {
 
       // pulse the EOC trigger (if set)
       if (_envelopeMode && _decaying && _triggerEOC) 
-        _triggerOutputs[_triggerForEOC]->Pulse();
+      {   //LATER
+         // _triggerOutputs[_triggerForEOR]->Pulse(); 
+        }
       
       // set the current to the target and turn off the set boolean
       _current = _target;
@@ -747,11 +815,13 @@ void FASTRUN CVOutput::Update() {
   }
 
 }
+*/
 
 /*
  * Update the DAC
  * Keep it Very Lean - Hardly Any CPU to Spare!
- */
+ *
+ * COMPUTERCARD moved to header for inlining
 void FASTRUN CVOutput::UpdateDAC(int value){
 
   // do log translation
@@ -776,15 +846,17 @@ void FASTRUN CVOutput::UpdateDAC(int value){
     _cvHelper = value;
     _dac.writeChannel(_output, (_dacCenter - _cvHelper));
   }  
-  
-}
+}_updateLED
+*/
+
 
 /*
  * Update the LED (runs at a slower rate than the DAC)
  */
-void CVOutput::UpdateLED() {
+uint16_t __not_in_flash_func(CVOutput::UpdateLED)() {
   // update the LED if changed OR the frequency rate is < 1 Hz
-  if (_updateLED || (_oscilMode && _oscillator->GetFrequency() <= 1)){
+  //if (_updateLED || (_oscilMode && _oscillator->GetFrequency() <= 1)){
+  if (_updateLED || _oscilMode ){
     _updateLED = false;
     // calculate the LED value and update it (and make sure you catch the envelope peak)
     // if the envelope has peaked, make sure to show the peak value to appear more responsive
@@ -794,25 +866,28 @@ void CVOutput::UpdateLED() {
       _peakLED = false;
       _updateLED = true;
     } else {
-      _ledHelper = _oscilMode ? abs(_cvHelper) >> 7 : abs(_current) >> 22;
+      //_ledHelper = _oscilMode ? abs(_cvHelper) >> 7 : abs(_current) >> 22;
+      _ledHelper = _oscilMode ? ((_cvHelper) >> 8)+128 : abs(_current) >> 22; 
     }
     _ledHelper = constrain(_ledHelper, 0, 255);
     // write the mapped LED value to the analog port
-    analogWrite(_led, _ledMap[_ledHelper]);
+    //analogWrite(_led, _ledMap[_ledHelper]);
+    //LedBrightness(_led, _ledMap[_ledHelper]);  // COMPUTERCARD implementation
   }
+  return _ledMap[_ledHelper];
 }
 
 /*
  * Calculate the Slew Value (for increments)
  */
-void CVOutput::CalculateSlewValue(){
+void __not_in_flash_func(CVOutput::CalculateSlewValue)(){
   _slew = CalculateRawSlew(_slewTime, _target, _current);
 }
 
 /*
  * Calculate the Slew Value from Raw MS for the value
  */
-SlewSteps CVOutput::CalculateRawSlew(long value, long target, long current){
+SlewSteps __not_in_flash_func(CVOutput::CalculateRawSlew)(long value, long target, long current){
   SlewSteps ret;
   ret.Duration = value;
   // split here so we don't divide by zero
@@ -833,7 +908,7 @@ SlewSteps CVOutput::CalculateRawSlew(long value, long target, long current){
 /*
  * Constrain the values to 16-bit Integer Range
  */
-int CVOutput::Constrain(int value){
+int __not_in_flash_func(CVOutput::Constrain)(int value){
   return constrain(value, -32768, 32767);
 }
 

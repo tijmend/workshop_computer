@@ -4,19 +4,34 @@
  * MIT License
  */
  
+#pragma once
+
 #ifndef CVOutput_h
 #define CVOutput_h
 
-#include "DAC7565.h"
+#define COMPUTERCARD_NOIMPL
+#include "ComputerCard.h"
+#include <cstdint>
 
-#include "Arduino.h"
+//#include "DAC7565.h"
+
+//#include "Arduino.h"
 #include "Output.h"
+#include "telexio.h"
 #include "Quantizer.h"
 #include "Oscillator.h"
-#include "TriggerOutput.h"
+#include "TriggerOutput.h" 
+#include "fastexp.h"
+#include "TxHelper.h"
+
+#include "ExpTable.h"
+#include "samplerate.h"
 
 #define RETRIGGERMS 5
 #define DACCENTER 32767
+
+#define FASTRUN // get rid of this arduino keyword
+#define max(a,b) ((a) > (b) ? (a) : (b)) // include the max keyword
 
 // 50 microseconds per millisecond - 1000 / 50
 
@@ -30,12 +45,13 @@ class CVOutput : public Output
 {
   public:
   
-    CVOutput(int output, int led, DAC& dac);
+    //CVOutput(int output, int led, DAC& dac);
+    CVOutput(TelexIO& telex, int output, int led);
 
     void ReferenceTriggers(TriggerOutput (*triggerOutputs[]), int count);
 
-    // audio-rate update methid
-    void Update();
+    // audio-rate update method
+    int16_t Update();
 
     void SetValue(int value);
     void TargetValue(int value);
@@ -58,7 +74,9 @@ class CVOutput : public Output
     void SetFrequency(int freq);
     void TargetFrequency(int freq);
     void SetVOct(int value);
+    void SetVOct_withoracle(int value); // oracle added
     void TargetVOct(int value);
+    void TargetVOct_withoracle(int value); // oracle added
     void SetLFO(int millihertz);
     void TargetLFO(int millihertz);
     void SetWaveform(int wave);
@@ -73,7 +91,10 @@ class CVOutput : public Output
 
     void SetOscQuantizationScale(int scale);
     void SetQuantizedVOct(int value);
+    void SetQuantizedVOct_withoracle(int value);
+    float QuantizedVOct_oraclewrapper(int value);
     void TargetQuantizedVOct(int value);
+    void TargetQuantizedVOct_withoracle(int value);
     void SetOscNote(int note);
     void TargetOscNote(int note);
 
@@ -97,7 +118,7 @@ class CVOutput : public Output
 
     // virtual implementations
     void Kill();
-    void UpdateLED();
+    uint16_t UpdateLED();
     
   protected:
 
@@ -119,7 +140,7 @@ class CVOutput : public Output
     // 1ms is the teletypes default value for slew time
     unsigned long _slewTime = 1;
     
-    float _tempMS = 0.;
+    //float _tempMS = 0.;
     
     int _offset = 0;
     long _lOffset = 0;
@@ -132,11 +153,11 @@ class CVOutput : public Output
     int _ledHelper;
     volatile bool _updateLED = false;
     
-    int _cvHelper;
+    volatile int _cvHelper;
 
-    DAC _dac;
+    //DAC _dac;
 
-    void UpdateDAC(int value);
+    int16_t UpdateDAC(int16_t value);
     void CalculateSlewValue();
     SlewSteps CalculateRawSlew(long value, long target, long current);
     int Constrain(int value);
@@ -146,14 +167,14 @@ class CVOutput : public Output
     Quantizer *_oscQuantizer;
 
     Oscillator *_oscillator;
-    bool _oscilMode = false;
+    volatile bool _oscilMode = false;
 
     void SharedOscil(int value);
 
-    int _dacCenter = DACCENTER;
+    //int _dacCenter = DACCENTER;
     int _oscilCenter = 0;
 
-    int const _peak = DAC_MAX_SCALE - 32769;
+    //int const _peak = DAC_MAX_SCALE - 32769;
 
     unsigned long _attack = 12;
     unsigned long _decay = 250;
@@ -173,7 +194,7 @@ class CVOutput : public Output
     int _loopTimes = -1;
     int _loopCount = 0;
 
-    bool _peakLED = false;
+    volatile bool _peakLED = false;
 
     TriggerOutput **_triggerOutputs;
     int _triggerOutputCount = 0;
@@ -186,7 +207,200 @@ class CVOutput : public Output
     bool _doLog = false;
     uint8_t _logRange = 1;
     bool _wasNg = false;
+
 };
+
+__attribute__((always_inline))
+inline int16_t __not_in_flash_func(CVOutput::Update)() {
+
+  if (_set || _slew.Steps == 1){
+    
+    _smallCurrent = _target >> 15;
+    
+    // set the CV directly (skipping any slew behavior)
+    // UpdateDAC(_smallCurrent);
+    _updateLED = true;
+
+    if (_envelopeActive){
+
+      if (_retrigger) {
+         // do the attack
+        _current = _lOffset;
+        _target = _envTarget;
+        _slew = _attackSlew;
+        _retrigger = false;
+        
+      } else if (!_envelopeState) {
+        // do the decay
+        _envelopeActive = false;
+        // force current to _envTarget in case of SR dip
+        _current = _envTarget;
+        _target = _lOffset;
+        _slew = _decaySlew;
+        _decaying = true;
+        _peakLED = true;
+
+        // pulse the EOR trigger (if set)
+        if (_envelopeMode && _triggerEOR)
+        {  
+          _triggerOutputs[_triggerForEOR]->Pulse(); 
+        }
+        
+      } else if (_envelopeState) {
+        _updateLED = false;
+      }
+      
+    } else {
+
+      // pulse the EOC trigger (if set)
+      if (_envelopeMode && _decaying && _triggerEOC) 
+      {  
+          _triggerOutputs[_triggerForEOR]->Pulse(); 
+      }
+      
+      // set the current to the target and turn off the set boolean
+      _current = _target;
+      _set = false; 
+      _slew.Steps = 0;  
+      _decaying = false;
+
+      // retrigger if looping and loop count has replays left
+      if (_envLoop){
+        if (_infLoop || ++_loopCount < _loopTimes)
+          TriggerEnvelope();
+        else
+          _envLoop = false;
+      }
+      
+    }
+
+    _smallCurrent = _current >> 15;
+    
+  } else if (_slew.Steps > 1){
+    
+    _slew.Steps--;
+    _current += _slew.Delta;
+
+    _smallCurrent = _current >> 15;
+    
+     // update the DAC
+    // UpdateDAC(_smallCurrent);
+    _updateLED = true;
+    
+  } else if (_oscilMode) { 
+    
+    // just update the dac
+    // UpdateDAC(_smallCurrent);
+
+  }
+
+  return UpdateDAC(_smallCurrent);
+}
+
+
+
+__attribute__((always_inline))
+inline int16_t __not_in_flash_func(CVOutput::UpdateDAC)(int16_t value){
+
+  // do log translation
+  if (_doLog){
+    if (value < 0){
+      value *= -1;
+      _wasNg = true;
+    } else {
+      _wasNg = false;
+    }
+    value = ExpTable[constrain(value << _logRange, 0 , 32767)];
+    if (_wasNg) value *= -1;
+    value = value >> _logRange;
+  }
+
+  // invert for DAC circuit
+  if (_oscilMode)
+    {
+      int16_t oscValue = static_cast<int16_t>(_oscillator->Oscillate());
+      value = static_cast<int16_t>((static_cast<int32_t>(value) * oscValue) >> 15);
+    }
+
+  // added the conditional write only if the CV value changes
+  // if (value != _cvHelper){
+  //   _cvHelper = value;
+  //   _dac.writeChannel(_output, (_dacCenter - _cvHelper));
+  
+  _cvHelper = value;
+  return value;
+}  
+
+__attribute__((always_inline))
+inline void __not_in_flash_func(CVOutput::RecomputeEnvelopes)()
+{
+    if (_decaying) {
+        const unsigned long steps =
+            static_cast<unsigned long>(_slew.Steps);
+
+        const unsigned long remaining =
+            (steps > 0) ? (steps - 1) / KRATE : 0;
+
+        _slew = CalculateRawSlew(remaining, _lOffset, _current);
+    }
+    else if (_envelopeActive) {
+        const unsigned long steps =
+            static_cast<unsigned long>(_slew.Steps);
+
+        const unsigned long remaining =
+            (steps > 0) ? (steps - 1) / KRATE : 0;
+
+        _slew = CalculateRawSlew(remaining, _envTarget, _current);
+    }
+
+    _attackSlew = CalculateRawSlew(
+        _attack,
+        _envTarget,
+        _lOffset
+    );
+
+    _decaySlew = CalculateRawSlew(
+        _decay,
+        _lOffset,
+        _envTarget
+    );
+}
+
+__attribute__((always_inline))
+inline void __not_in_flash_func(CVOutput::TriggerEnvelope)(){
+
+  if (_envelopeMode) {
+
+    if (_decaying) {
+      
+      // retrigger the envelope by going to zero/offset first
+      _slew = CalculateRawSlew(RETRIGGERMS, _lOffset, _current);
+      _target = _lOffset;
+      _retrigger = true;
+      
+    } else {
+            
+      _current = _lOffset;
+      _target = _envTarget;
+      _slew = _attackSlew;
+
+    }
+    if (!_envLoop && _loopTimes != 1){
+      _loopCount = 0;
+      _envLoop = true;
+    }
+    _envelopeActive = true;
+  }
+  
+}
+
+extern CVOutput* cvOutputs[];
+
+__attribute__((always_inline))
+inline float __not_in_flash_func(CVOutputs_quant_oraclewrapper)(uint8_t output, int16_t value)
+{
+    return cvOutputs[output]->QuantizedVOct_oraclewrapper(value);
+}
 
 #endif
 

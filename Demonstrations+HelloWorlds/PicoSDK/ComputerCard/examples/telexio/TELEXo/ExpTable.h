@@ -7,7 +7,7 @@
 #ifndef ExpTable_h
 #define ExpTable_h
 
-static int16_t const ExpTable[32768] = {
+inline static int16_t const ExpTable[32768] = {
     
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
