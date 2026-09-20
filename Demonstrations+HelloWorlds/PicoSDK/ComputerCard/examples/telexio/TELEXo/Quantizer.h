@@ -7,11 +7,14 @@
 #ifndef Quantizer_h
 #define Quantizer_h
 
-#include "Arduino.h"
+//#include "Arduino.h"
 
 #define NOTES 128
 #define NOTEEND 127
 #define SCALES 1
+
+#include <stdlib.h>
+#include "pico/stdlib.h"
 
 struct QuantizeResponse {
   int Note; 

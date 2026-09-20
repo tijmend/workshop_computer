@@ -4,28 +4,34 @@
  * MIT License
  */
  
-#include "Arduino.h"
+//#include "Arduino.h"
 #include "TriggerOutput.h"
 #include "TxHelper.h"
+
 
 /*
  * Initialize a Trigger Output and its LED
  */
-TriggerOutput::TriggerOutput(int output, int led) : Output(output, led) {
- 
+TriggerOutput::TriggerOutput(TelexIO& telex, int output, int led) : Output(telex, output, led) {
+  /*
   // initialize the pins
   pinMode(_output, OUTPUT);
   pinMode(_led, OUTPUT);
+  */
 }
 
 /*
  * Set the State of the Trigger Output and Write it To the Output Pins
- */
+ *
+ *  INLINED
 void TriggerOutput::SetState(bool state){
   _state = state;
-  digitalWrite(_output, _state ? HIGH : LOW);
-  digitalWrite(_led, _state ? HIGH : LOW);
+  //digitalWrite(_output, _state ? HIGH : LOW);
+  //digitalWrite(_led, _state ? HIGH : LOW); 
+  _telex.SetPulse(_output, _state);
+  _telex.SetLed(_led, _state);
 }
+*/
 
 /*
  * Sets the duration of the trigger pulse in multiple time formats
@@ -41,7 +47,8 @@ void TriggerOutput::SetTime(int value, short format){
 void TriggerOutput::SetWidth(int value){
   _widthMode = true;
   _width = constrain(value, 0, 100);
-  _pulseTime = _metroInterval * _width / 100.;
+  //_pulseTime = _metroInterval * _width / 100.; // FIXED POINT VERSION BELOW:
+  _pulseTime = static_cast<int>((static_cast<uint64_t>(_metroInterval) * static_cast<uint64_t>(_width)*82u)>>13);
 }
 
 /*
@@ -192,16 +199,17 @@ void TriggerOutput::Kill(){
 
 /*
  * Update Function (Call This a Lot)
- */
+ *
+ * INLINED
 void FASTRUN TriggerOutput::Update(unsigned long currentTime){
 
-  /*
-   * _multiplication = number of dongises
-   * _multiply = bool ON or OFF
-   * _multiplyInterval
-    unsigned long _nextNormal = 0;
-    int _multiplyCount = 0;
-   */
+   //
+   // _multiplication = number of dongises
+   // _multiply = bool ON or OFF
+   // _multiplyInterval
+   // unsigned long _nextNormal = 0;
+   // int _multiplyCount = 0;
+   //
 
   // turn off the pulse
   if (currentTime >= _toggle) {
@@ -254,6 +262,8 @@ void FASTRUN TriggerOutput::Update(unsigned long currentTime){
   }
   
 }
+*/
+
 
 
 

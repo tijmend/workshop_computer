@@ -53,7 +53,9 @@ QuantizeResponse Quantizer::Quantize(int in) {
   
   // if not - we need to find where we are in the list
   // hints are a type of skip-list that jumps us to the proper octave
-  _octave = (int)(in / 1638.3) - 1;
+  // CONVERTED TO FIXED POINT MATH BELOW. _octave = (int)(in / 1638.3) - 1;
+
+  _octave = ((in * 10) >> 14) - 1;
   _octave = _octave > 0 ? _octave : 0;
   
   _index = hints[_scale][_octave];

@@ -82,3 +82,42 @@ add_example(usb_detect)
 add_example(usb_serial)
 target_link_libraries(usb_serial pico_multicore)
 pico_enable_stdio_usb(usb_serial 1)
+
+add_example(telexio)
+target_compile_definitions(telexio PRIVATE
+  ENABLE_UART_DEBUGGING
+  PICO_FLOAT_IN_RAM=1
+  PICO_DOUBLE_IN_RAM=1
+)
+pico_generate_pio_header(telexio ${CMAKE_CURRENT_LIST_DIR}/examples/telexio/i2c_multi.pio)
+target_compile_options(telexio PRIVATE
+    -O2
+    -Wdouble-promotion
+    -Wfloat-conversion
+    -Wall
+    -Wextra
+    -Winline
+)
+target_sources(telexio PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/examples/telexio/i2c_multi.c
+    ${CMAKE_CURRENT_LIST_DIR}/examples/telexio/lut.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/examples/telexio/TELEXi/AnalogReader.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/examples/telexio/TELEXo/Quantizer.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/examples/telexio/TELEXo/TxHelper.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/examples/telexio/TELEXo/Oscillator.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/examples/telexio/TELEXo/CVOutput.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/examples/telexio/TELEXo/TriggerOutput.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/examples/telexio/TELEXo/Output.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/examples/telexio/telexio.cpp
+)
+pico_add_extra_outputs(telexio)
+target_link_libraries(telexio
+    pico_stdlib
+    hardware_irq
+    hardware_pio
+    hardware_i2c
+	  pico_multicore
+    pico_rand
+)
+pico_enable_stdio_usb(telexio 1)
+pico_enable_stdio_uart(telexio 0)
