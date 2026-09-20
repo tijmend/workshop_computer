@@ -8,17 +8,14 @@
 #ifndef TriggerOutput_h
 #define TriggerOutput_h
 
-//#include "Arduino.h"
 #include "Output.h"
 #include "telexio.h"
 
-#define MAXTIME 4294967295
+#include "pico/time.h"
 
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt))) // replace constrain
 #define max(a,b) ((a) > (b) ? (a) : (b)) // include the max keyword
 
-#include <stdlib.h>
-#include "pico/time.h"
 #define millis() to_ms_since_boot(get_absolute_time())
 
 class TriggerOutput : public Output

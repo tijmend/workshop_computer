@@ -1,4 +1,5 @@
 #include "lut.h"
+#include <cstdint>
 
 int16_t reciprocal_lut[1024];
 uint8_t clz_lut16[CLZ16_LUT_SIZE];

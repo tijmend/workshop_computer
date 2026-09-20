@@ -1,5 +1,4 @@
 #pragma once
-#include <cstdint>
 #include "samplerate.h"
 
 constexpr uint32_t CLZ16_LUT_SIZE = (FNUM_HI >> 16) + 1;

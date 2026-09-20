@@ -4,10 +4,8 @@
  * MIT License
  */
  
-//#include "Arduino.h"
 #include "TriggerOutput.h"
 #include "TxHelper.h"
-
 
 /*
  * Initialize a Trigger Output and its LED

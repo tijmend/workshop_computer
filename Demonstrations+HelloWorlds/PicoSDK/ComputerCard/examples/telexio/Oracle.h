@@ -2,9 +2,8 @@
 
 #include <cstdint>
 #include "samplerate.h"
-//#include "TELEXo/CVOutput.h"
-
-float CVOutputs_quant_oraclewrapper(uint8_t output, int16_t value);
+#include "TELEXo/CVOutput.h"
+#include "TELEXo/telex.h"
 
 enum OracleState : uint8_t
 {
@@ -51,12 +50,12 @@ inline void __not_in_flash_func(oracle_think)()
         case TO_OSC_QT:
         { 
             // expensive calculation here
-            oracle.floatAnswer = CVOutputs_quant_oraclewrapper(oracle.output, oracle.value);
+            oracle.floatAnswer = cvOutputs[oracle.output]->QuantizedVOct_oraclewrapper(oracle.value);
             break;
         }
         case TO_OSC_QT_SET:
             // expensive calculation here
-            oracle.floatAnswer = CVOutputs_quant_oraclewrapper(oracle.output, oracle.value);
+            oracle.floatAnswer = cvOutputs[oracle.output]->QuantizedVOct_oraclewrapper(oracle.value); 
             break;
 
         default:
@@ -75,4 +74,35 @@ inline void __not_in_flash_func(oracle_ask)(uint8_t cmd, uint8_t out, int16_t va
     oracle.state = QuestionAsked;
 }
 
-void oracle_answer();
+__attribute__((always_inline))
+inline void __not_in_flash_func(oracle_answer)()
+{
+    switch (oracle.question)
+    {
+        case TO_OSC:
+        {
+            cvOutputs[oracle.output]->TargetVOct_withoracle(oracle.value);
+            break;
+        }
+        case TO_OSC_SET:
+        {
+            cvOutputs[oracle.output]->SetVOct_withoracle(oracle.value);
+            break;
+        }
+        case TO_OSC_QT:
+        {
+            cvOutputs[oracle.output]->TargetQuantizedVOct_withoracle(oracle.value);
+            break;
+        }
+        case TO_OSC_QT_SET:
+        {
+            cvOutputs[oracle.output]->SetQuantizedVOct_withoracle(oracle.value);
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    oracle.state = None;
+}

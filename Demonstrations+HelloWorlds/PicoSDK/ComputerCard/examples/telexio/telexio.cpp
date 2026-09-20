@@ -1,7 +1,23 @@
 #include "telexio.h"
 
+// Utility
+#include "i2c_multi.h"
+#include <stdio.h>
+
+// TELEXI 
+#include "TELEXi/AnalogReader.h"
+
+// TELEXO
+#include "TELEXo/Oscillator.h"
 #include "TELEXo/CVOutput.h"
 #include "TELEXo/TriggerOutput.h"
+
+// TELEXI and TELEXO
+#include "TELEXo/Quantizer.h"       // the one from TELEXO is a superset  
+#include "TELEXo/TxHelper.h"        // the one from TELEXO is a superset
+#include "TELEXo/telex.h"           
+
+#include "Oracle.h"
 
 // declarations for i2c
 static PIO pio = pio0;
@@ -908,37 +924,3 @@ void __not_in_flash_func(TelexIO::telexOActOnCommand)(uint8_t cmd, uint8_t out, 
   }
 
 }
-
-__attribute__((always_inline))
-inline void __not_in_flash_func(oracle_answer)()
-{
-    switch (oracle.question)
-    {
-        case TO_OSC:
-        {
-            cvOutputs[oracle.output]->TargetVOct_withoracle(oracle.value);
-            break;
-        }
-        case TO_OSC_SET:
-        {
-            cvOutputs[oracle.output]->SetVOct_withoracle(oracle.value);
-            break;
-        }
-        case TO_OSC_QT:
-        {
-            cvOutputs[oracle.output]->TargetQuantizedVOct_withoracle(oracle.value);
-            break;
-        }
-        case TO_OSC_QT_SET:
-        {
-            cvOutputs[oracle.output]->SetQuantizedVOct_withoracle(oracle.value);
-            break;
-        }
-
-        default:
-            break;
-    }
-
-    oracle.state = None;
-}
-

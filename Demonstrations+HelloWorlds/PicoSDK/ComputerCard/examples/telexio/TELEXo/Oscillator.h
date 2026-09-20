@@ -12,17 +12,18 @@
 #ifndef Oscillator_h
 #define Oscillator_h
 
-//#include "Arduino.h" // instead:
-#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt))) // replace constrain
-#include<cstdint> 
-#include <stdlib.h>
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt))) // replace constrain from Arduino
+
+#include <cstdint>
+#include <cstdlib> 
+#include "pico/stdlib.h"
 #include "pico/rand.h" // look at it later, added to linked libraries in makefile also
 #define random(a, b) ((int)(get_rand_32() & 0xFFFF)) // look at it later
 // end instead
+
 #include "Wavetables.h"
 #include "samplerate.h"
 #include "lut.h"
-#include "pico/stdlib.h"
 
 #define TABLERANGE 512
 #define TABLERANGEDIV2 256
