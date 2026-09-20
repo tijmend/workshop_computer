@@ -9,10 +9,6 @@
 #ifndef AnalogReader_h
 #define AnalogReader_h
 
-//#include "Arduino.h"
-//#include <ResponsiveAnalogRead.h>
-
-
 #define TOP 16383
 #define BOTTOM -16384
 

@@ -4,11 +4,12 @@
  * MIT License
  */
  
-//#include "defines.h"
-//#include "Arduino.h"
 #include "CVOutput.h"
-//#include "TxHelper.h"
-//#include "DAC7565.h"
+#include "TriggerOutput.h" 
+#include "fastexp.h"
+#include "TxHelper.h"
+#include "samplerate.h"
+#include "Oracle.h"
 
 /*
  * Constructor for Setting up the Output

@@ -13,19 +13,13 @@
 #include "ComputerCard.h"
 #include <cstdint>
 
-//#include "DAC7565.h"
+#include "TELEXo/Output.h"
+#include "TELEXo/TriggerOutput.h"
+#include "TELEXo/Quantizer.h"
+#include "TELEXo/Oscillator.h"
+#include "TELEXo/ExpTable.h"
 
-//#include "Arduino.h"
-#include "Output.h"
 #include "telexio.h"
-#include "Quantizer.h"
-#include "Oscillator.h"
-#include "TriggerOutput.h" 
-#include "fastexp.h"
-#include "TxHelper.h"
-
-#include "ExpTable.h"
-#include "samplerate.h"
 
 #define RETRIGGERMS 5
 #define DACCENTER 32767
@@ -210,6 +204,8 @@ class CVOutput : public Output
 
 };
 
+extern CVOutput* cvOutputs[4];
+
 __attribute__((always_inline))
 inline int16_t __not_in_flash_func(CVOutput::Update)() {
 
@@ -392,14 +388,6 @@ inline void __not_in_flash_func(CVOutput::TriggerEnvelope)(){
     _envelopeActive = true;
   }
   
-}
-
-extern CVOutput* cvOutputs[];
-
-__attribute__((always_inline))
-inline float __not_in_flash_func(CVOutputs_quant_oraclewrapper)(uint8_t output, int16_t value)
-{
-    return cvOutputs[output]->QuantizedVOct_oraclewrapper(value);
 }
 
 #endif

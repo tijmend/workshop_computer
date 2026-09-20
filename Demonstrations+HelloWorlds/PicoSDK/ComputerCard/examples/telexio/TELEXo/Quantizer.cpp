@@ -4,9 +4,8 @@
  * MIT License
  */
  
-//#include "Arduino.h"
+
 #include "Quantizer.h"
-//#include "TxHelper.h"
 
 /*
  * initializes the quantizer and sets the scale to 0 (usually equal temperment)

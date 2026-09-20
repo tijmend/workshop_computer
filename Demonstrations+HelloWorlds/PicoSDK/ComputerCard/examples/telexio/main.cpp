@@ -1,6 +1,9 @@
 #include "ComputerCard.h"
 #include "telexio.h"
 #include "lut.h"
+#include "pico/multicore.h"
+#include "pico/stdlib.h"
+
 
 // FIXMEs
 // use of random in the oscillator

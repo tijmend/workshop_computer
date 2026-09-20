@@ -7,11 +7,10 @@
 #pragma once
 #ifndef Output_h
 #define Output_h
-#include "telexio.h"
-
-//#include "Arduino.h"
 
 #define MAXTIME 4294967295
+
+class TelexIO;
 
 class Output
 {
