@@ -49,27 +49,28 @@ static volatile uint8_t activeInput = 0;
 static volatile uint8_t activeMode = 0;
 
 
-// declarations for TELEXO
-static volatile uint32_t measure_benchmark = 0;
-static volatile uint32_t measure_debug = -1234;
-
 // shared between cores
 static volatile uint32_t now_millis;
-static volatile bool overrun;
-static volatile uint32_t oraclerequest;
+
+#ifdef BENCHMARK
+// benchmarking
+#include <cinttypes>
+static volatile uint32_t benchmark_measure = 0;
+static volatile bool benchmark_overrun = false;
+static volatile bool benchmark_expose = false;
+static volatile uint32_t expose_input = 0;
+#endif
 
 
+// TELEX objects
 Oscillator* osc[4];
 TriggerOutput* triggerOutputs[4]; // Note! the first two are used, the second two are useless on computercard but retained for compatibility
 CVOutput* cvOutputs[4];
 
 
+//
 // i2c functions
 //
-// I2C handlers run in interrupt context.
-// Keep them short and non-blocking. Avoid printf/Serial, delays,
-// or other slow operations.
-
 
 void InitialisePIO(){
     i2c_multi_init(pio, i2c_pin_);
@@ -119,13 +120,10 @@ void __not_in_flash_func(i2c_request_handler)(const uint8_t address) {
         tx_buffer[0] = shiftReady >> 8;
         tx_buffer[1] = shiftReady & 0xFF;
 
-        measure_debug = shiftReady;
-
-        //printf("benchmark audio loop %d\n",measure_benchmark);
-            
-        //printf("responding! value %d, %d %d, mode %d, input %d\n",inputValue[activeInput],tx_buffer[0],tx_buffer[1],activeMode,activeInput);
-
-        //printf("B%d V%d \n",measure_benchmark,shiftReady);
+        #if BENCHMARK
+          expose_input = shiftReady;
+          benchmark_expose = true;
+        #endif 
     }
 }
 
@@ -235,31 +233,37 @@ void __not_in_flash_func(TelexIO::SlowProcessingCore)()
             LedBrightness(2, cvOutputs[2]->UpdateLED()<<4 );
             LedBrightness(3, cvOutputs[3]->UpdateLED()<<4 );
 
-            if (overrun) {
-                for (int i = 0; i<6; i++) { LedOn(i); }
-            }
+            #if BENCHMARK
+                if (benchmark_overrun) {
+                    for (int i = 0; i<6; i++) {LedOn(i);} 
+                }
+                if (benchmark_expose) {
+                    // print debug info and reset all
+                    printf("B %" PRIu32 " V %" PRIu32 "\n",benchmark_measure,expose_input);
+                    benchmark_measure = 0;
+                    benchmark_expose  = false;
+                    benchmark_overrun = false;
+                }
+            #endif
         }
-
+        
         // parse the command for TELEXI
         telexIParse();
-        
-        if (measure_debug != -1234) {
-            auto tmp = measure_benchmark;
-            printf("B %d V %d\n",tmp,measure_debug);
-            measure_benchmark = 0;
-            measure_debug = -1234;
-            overrun = false;
-        }
 
-        if(oracle.state == QuestionAsked)
-        {   
-            static uint32_t thinktime1 = time_us_32();
+        if (oracle.state == QuestionAsked) {   
+            #if BENCHMARK
+              uint32_t thinktime1 = time_us_32();
+            #endif 
+            
             // answer core 0
             oracle_think();
-            static uint32_t thinktime2 = time_us_32();
-            printf("thinking %d\n",thinktime2-thinktime1);
+            
+            #if BENCHMARK
+              uint32_t thinktime2 = time_us_32();
+              printf("thinking %" PRIu32 "\n",thinktime2-thinktime1);
+            #endif
         }
-
+        
         tight_loop_contents();
     }
 }
@@ -268,9 +272,11 @@ void __not_in_flash_func(TelexIO::ProcessSample)()
 {
     // Runs on Core 0 at 48 kHz.
 
-    static uint32_t now_previous = 0;
+    #if BENCHMARK
+      uint32_t measure_now = time_us_32();  
+    #endif
 
-    uint32_t measure_now = time_us_32();  
+    static uint32_t now_previous = 0;
 
     int16_t valueL = static_cast<int16_t>(cvOutputs[0]->Update())>>4;
     int16_t valueR = static_cast<int16_t>(cvOutputs[1]->Update())>>4;
@@ -301,9 +307,11 @@ void __not_in_flash_func(TelexIO::ProcessSample)()
     if (PulseIn1RisingEdge()) cvOutputs[0]->TriggerEnvelope();
     if (PulseIn2RisingEdge()) cvOutputs[1]->TriggerEnvelope();
 
-    uint32_t tmp = time_us_32()-measure_now;
-    if (measure_benchmark < tmp) measure_benchmark = tmp; // worst case scenario
-    if (tmp > 15) overrun = true;
+    #if BENCHMARK
+        uint32_t time_measured = time_us_32()-measure_now;
+        if (benchmark_measure < time_measured) benchmark_measure = time_measured; // worst case scenario
+        if (time_measured > 15) benchmark_overrun = true;
+    #endif
 }
 
 
@@ -457,18 +465,15 @@ void TelexIO::InitTelexO()
     cvOutputs[2]->ReferenceTriggers(triggerOutputs, 4);
     cvOutputs[3]->ReferenceTriggers(triggerOutputs, 4);
 
-    // write sensible defaults for testing
-
+    #if STRESSTEST
+    // write sensible defaults for stress testing
     for (int i = 0; i < 4; ++i) {
         cvOutputs[i]->SetValue(0xFFF0);
         cvOutputs[i]->SetLog(0);
         cvOutputs[i]->SetFrequency(500);
         cvOutputs[i]->SetWaveform(350);
     }
-    //cvOutputs[0]->SetLFO(300);
-    //cvOutputs[1]->SetLFO(500);
-    //cvOutputs[2]->SetLFO(700);
-    //cvOutputs[3]->SetLFO(900);
+    #endif
 }
 
 void __not_in_flash_func(TelexIO::telexOParse)(){
