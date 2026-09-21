@@ -19,7 +19,6 @@
 #include "pico/stdlib.h"
 #include "pico/rand.h" // look at it later, added to linked libraries in makefile also
 #define random(a, b) ((int)(get_rand_32() & 0xFFFF)) // look at it later
-// end instead
 
 #include "Wavetables.h"
 #include "samplerate.h"
@@ -84,7 +83,7 @@ class Oscillator
   //int _invMorph = MORPHRANGE;
   bool _morphing = false;
   int _morphValue = 0;
-  uint16_t morphQ10;
+  uint16_t morphQ10 = 0;
   uint16_t invMorphQ10 = 1023 - morphQ10;
 
   volatile float _frequency = 0;
@@ -297,7 +296,7 @@ inline uint32_t __not_in_flash_func(Oscillator::ratio_q15)(uint32_t u, uint32_t 
     // 0 <= u < x
     // Algorithm returns (u / x) * 32768 (i.e. Q15)
 
-    // Note! Bounds defined in sample.h are assumed throughout this algo. See comments.
+    // Note! Bounds defined in samplerate.h are assumed throughout this algo. See comments.
     if (u == 0 || x < FNUM_LO || x > FNUM_HI) return 0;
 
     // Normalise denominator
