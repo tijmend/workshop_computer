@@ -4,15 +4,13 @@
 #include "pico/multicore.h"
 #include "pico/stdlib.h"
 
-
 // FIXMEs
 // use of random in the oscillator
-// oscillators seem sharp??
-// rework header includes and inline of oracle functions
-// consider LUT for v/oct
+// move profiling output to i2c-replies instead of USB-serial
 // move any TO operands that take too long to oracle
+// consider LUT for v/oct
 
-TelexIO telex; // not on the stack
+TelexIO telex; // don't build it on the stack
 
 int main()
 {
