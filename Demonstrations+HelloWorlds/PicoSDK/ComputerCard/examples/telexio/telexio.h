@@ -6,8 +6,8 @@ constexpr uint8_t I2C_TELEXI_ADDRESS = 0x68;
 constexpr uint8_t I2C_TELEXO_ADDRESS = 0x60;
 
 // 1,0 turns profiling on,off in the 48khz callback
-#define BENCHMARK 1
-#define STRESSTEST 1
+#define BENCHMARK 0
+#define STRESSTEST 0
 
 #define COMPUTERCARD_NOIMPL
 #include "ComputerCard.h"

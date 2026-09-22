@@ -56,6 +56,7 @@ static volatile uint32_t now_millis;
 // benchmarking
 #include <cinttypes>
 static volatile uint32_t benchmark_measure = 0;
+static volatile uint32_t benchmark_max = 0;
 static volatile bool benchmark_overrun = false;
 static volatile bool benchmark_expose = false;
 static volatile uint32_t expose_input = 0;
@@ -239,7 +240,8 @@ void __not_in_flash_func(TelexIO::SlowProcessingCore)()
                 }
                 if (benchmark_expose) {
                     // print debug info and reset all
-                    printf("B %" PRIu32 " V %" PRIu32 "\n",benchmark_measure,expose_input);
+                    if (benchmark_max<benchmark_measure) benchmark_max=benchmark_measure;
+                    printf("B %lu  M %lu  V %lu\n",benchmark_measure,benchmark_max,expose_input);
                     benchmark_measure = 0;
                     benchmark_expose  = false;
                     benchmark_overrun = false;
