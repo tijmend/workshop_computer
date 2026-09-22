@@ -102,9 +102,10 @@ void __not_in_flash_func(Oscillator::TargetLFO)(int millihertz) {
  */
 void __not_in_flash_func(Oscillator::SetWidth)(int width) {
   width = constrain(width, 0, 100);
-  _fWidth = (float)width / 100.;
-  _ulWidth = _fWidth * (FULLPHASE - 1);
-  _width = _fWidth * (TABLERANGE - 1);
+  _ulWidth = ((uint64_t)width * (FULLPHASEL - 1)) / 100; // inserted to avoid old float code
+  //_fWidth = (float)width / 100.;
+  //_ulWidth = _fWidth * (FULLPHASE - 1);
+  //_width = _fWidth * (TABLERANGE - 1);
 
   #ifdef DEBUG
   Serial.printf("width: %d; _fWidth: %f; _ulWidth: %lu; _width: %d\n",width, _fWidth, _ulWidth, _width);

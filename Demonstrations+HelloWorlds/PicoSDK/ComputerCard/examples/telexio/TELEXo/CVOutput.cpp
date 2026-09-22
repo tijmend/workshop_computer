@@ -6,7 +6,6 @@
  
 #include "CVOutput.h"
 #include "TriggerOutput.h" 
-#include "fastexp.h"
 #include "TxHelper.h"
 #include "samplerate.h"
 #include "Oracle.h"
@@ -471,7 +470,7 @@ void __not_in_flash_func(CVOutput::SetCycle)(int value, short format){
   SharedOscil(value);
 
   if (_oscilMode)
-    _oscillator->SetFloatFrequency(1000. / value);
+    _oscillator->SetFloatFrequency(1000.0f / value);
 }
 
 /*
@@ -485,7 +484,7 @@ void __not_in_flash_func(CVOutput::TargetCycle)(int value, short format){
   SharedOscil(value);
   
   if (_oscilMode)
-    _oscillator->TargetFloatFrequency(1000. / value);
+    _oscillator->TargetFloatFrequency(1000.0f / value);
 }
 
 /*

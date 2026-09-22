@@ -98,8 +98,8 @@ class Oscillator
   
   int _lastValue;
   
-  int _width = TABLERANGEDIV2;
-  float _fWidth = .5;
+  //int _width = TABLERANGEDIV2; //Unused?
+  //float _fWidth = .5; // unsused?
   unsigned long _ulWidth = FULLPHASEL >> 1;
 
   int8_t _rectify = 0;
