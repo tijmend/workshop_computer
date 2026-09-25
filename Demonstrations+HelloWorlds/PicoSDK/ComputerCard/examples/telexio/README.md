@@ -1,11 +1,14 @@
 ## TelexIO
 
-**TelexIO** is a port of the open-source **TelexI** and **TelexO** expander modules (for Teletype) to the **Music Thing Modular Workshop Computer**.
-It emulates both modules together on a single workshop computer and responds to the same TI and TO commands from an i2c-connected Teletype as the original modules do. 
+**TelexIO** is a port of the open-source **TelexI** and **TelexO** expander modules (for Teletype) to the **Music Thing Modular Workshop Computer**. The original Telex eurorack Expanders can be found here: https://github.com/bpcmusic/telex
+
+This card emulates both modules together on a single workshop computer and responds to the same TI and TO commands from an i2c-connected Teletype as the original modules do. 
 
 The Workshop Computer’s knobs, inputs, and outputs are mapped to corresponding TelexI and TelexO functionality, with a few differences due to different hardware.
 
 This Workshop Computer card was developed as a proof of concept to investigate whether **i2c communication** through the Workshop Computer’s UART pins is possible. See electrical notes below. 
+
+For the compiled binary card see **telexio.uf2** in this folder.
 
 # Input and output mapping
 Mapping between Workshop Computer and TelexI/TelexO functionality:
